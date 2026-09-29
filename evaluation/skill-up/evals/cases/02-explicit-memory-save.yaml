@@ -9,6 +9,5 @@ expect:
 judge:
   type: rule_based
   success:
-    - tool_called_in_turn:
-        turn: 1
+    - tool_called:
         name: mcp__powercontext__remember_memory

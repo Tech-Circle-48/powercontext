@@ -13,8 +13,8 @@ mcp:
 
 skills:
   - source: local_path
-    path: vendor/powercontext-plugin/skills/powercontext-project-context
-    include: [SKILL.md, "references/**"]
+    path: vendor/powercontext-plugin
+    include: [SKILL.md, "references/**", "scripts/**", "*.py"]
 
 engine:
   name: claude_code

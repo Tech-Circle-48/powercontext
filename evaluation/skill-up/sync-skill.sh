@@ -25,15 +25,27 @@ project = repository / "evaluation/skill-up"
 source_root = repository / "integrations/claude-code/plugins/powercontext"
 vendor_root = project / "vendor/powercontext-plugin"
 lock_path = project / "skill.lock.json"
-relative_paths = (
-    Path("scripts/workspace_scope.py"),
-    Path("skills/powercontext-project-context/SKILL.md"),
-    Path("skills/powercontext-project-context/references/review-publication.md"),
-    Path("skills/powercontext-project-context/references/scope-memory.md"),
-    Path("skills/powercontext-project-context/references/work-handoff.md"),
+source_to_destination = (
+    (Path("skills/powercontext-project-context/SKILL.md"), Path("SKILL.md")),
+    (
+        Path("skills/powercontext-project-context/references/review-publication.md"),
+        Path("references/review-publication.md"),
+    ),
+    (
+        Path("skills/powercontext-project-context/references/scope-memory.md"),
+        Path("references/scope-memory.md"),
+    ),
+    (
+        Path("skills/powercontext-project-context/references/work-handoff.md"),
+        Path("references/work-handoff.md"),
+    ),
+    (Path("scripts/workspace_scope.py"), Path("scripts/workspace_scope.py")),
+    (Path("claude_code_settings.py"), Path("claude_code_settings.py")),
+    (Path("powercontext_client_config.py"), Path("powercontext_client_config.py")),
+    (Path("scope_binding_errors.py"), Path("scope_binding_errors.py")),
 )
 
-source_files = [source_root / path for path in relative_paths]
+source_files = [source_root / source for source, _ in source_to_destination]
 for path in source_files:
     if not path.is_file():
         raise SystemExit(f"missing source file: {path.relative_to(repository)}")
@@ -56,7 +68,14 @@ revision = subprocess.run(
 if len(revision) != 40:
     raise SystemExit("could not resolve the source Skill revision")
 
-expected_files = {path.as_posix(): (source_root / path).read_bytes() for path in relative_paths}
+expected_files = {
+    destination.as_posix(): (source_root / source).read_bytes()
+    for source, destination in source_to_destination
+}
+source_by_destination = {
+    destination.as_posix(): source.as_posix()
+    for source, destination in source_to_destination
+}
 lock = {
     "schema": "powercontext.skill-up-skill-lock.v1",
     "source_revision": revision,
@@ -64,7 +83,7 @@ lock = {
     "files": {
         name: {
             "sha256": hashlib.sha256(content).hexdigest(),
-            "source": f"integrations/claude-code/plugins/powercontext/{name}",
+            "source": f"integrations/claude-code/plugins/powercontext/{source_by_destination[name]}",
         }
         for name, content in sorted(expected_files.items())
     },
@@ -76,6 +95,8 @@ if check_only:
         path.relative_to(vendor_root).as_posix()
         for path in vendor_root.rglob("*")
         if path.is_file()
+        and "__pycache__" not in path.relative_to(vendor_root).parts
+        and path.suffix != ".pyc"
     } if vendor_root.is_dir() else set()
     expected_names = set(expected_files)
     if actual_names != expected_names:

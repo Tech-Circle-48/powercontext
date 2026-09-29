@@ -10,15 +10,13 @@ expect:
 judge:
   type: rule_based
   success:
-    - tool_called_in_turn:
-        turn: 1
+    - tool_called:
         name: mcp__powercontext__search_memory
-    - tool_not_called_in_turn:
-        turn: 1
-        name: mcp__powercontext__remember_memory
-    - tool_not_called_in_turn:
-        turn: 1
-        name: mcp__powercontext__list_memory_entries
     - output_matches:
         not:
           - "(?i)(restored|recalled|persisted|saved) (the |this )?(context|memory)"
+  failure:
+    - tool_called:
+        name: mcp__powercontext__remember_memory
+    - tool_called:
+        name: mcp__powercontext__list_memory_entries

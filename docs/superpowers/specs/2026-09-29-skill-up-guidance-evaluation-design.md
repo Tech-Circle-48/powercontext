@@ -109,21 +109,21 @@ reported separately; neither is presented as an absolute model-quality score.
 
 ### Ordinary coding
 
-The prompt asks for a small self-contained Python refactor. The response must complete normally, and the first turn must
-not call any tool in the PowerContext MCP catalog. The complete relevant catalog is enumerated with
-`tool_not_called_in_turn` assertions because skill-up v0.12.0 matches tool names by exact equality and has no namespace
-prefix matcher.
+The prompt asks for a small self-contained Python refactor. The response must complete normally and must not call any
+tool in the PowerContext MCP catalog. The complete relevant catalog is enumerated as `failure: tool_called` assertions
+because skill-up v0.12.0 matches tool names by exact equality and has no namespace prefix matcher.
 
 ### Explicit Memory save
 
-The prompt explicitly asks to remember a fictional project constraint. The first turn must call `remember_memory`. This
-positive control ships with the ordinary-coding negative control so a model that never calls tools cannot pass the suite.
+The prompt explicitly asks to remember a fictional project constraint. The transcript must contain a `remember_memory`
+call. This positive control ships with the ordinary-coding negative control so a model that never calls tools cannot
+pass the suite.
 
 ### Empty Memory search
 
-The prompt explicitly requests a focused search for a fictional fact that is absent from the fresh database. The first
-turn must call `search_memory`, must not call `remember_memory`, and must not call `list_memory_entries`. The final answer
-must not claim that context was restored or persisted.
+The prompt explicitly requests a focused search for a fictional fact that is absent from the fresh database. The
+transcript must contain `search_memory`; matching `remember_memory` or `list_memory_entries` calls are failure rules. The
+final answer must not claim that context was restored or persisted.
 
 ### Artifact Candidate inspection
 
@@ -133,9 +133,9 @@ no additional authority.
 
 ### Failed Memory save
 
-The prompt explicitly asks for persistence, and the controlled MCP fixture returns a write failure. The first turn must
-attempt `remember_memory`. Output rules reject success claims such as saved, persisted, or remembered successfully. The
-case verifies instruction and reporting behavior only, not real persistence.
+The prompt explicitly asks for PowerContext persistence, and the controlled MCP fixture returns a write failure. The
+transcript must contain an attempted `remember_memory` call. Output rules reject success claims such as saved,
+persisted, or remembered successfully. The case verifies instruction and reporting behavior only, not real persistence.
 
 ## Recorded Tool Names
 
@@ -152,6 +152,11 @@ and transcript-derived tool-name inventory. It does not include credentials or m
 `expect` is limited to inexpensive execution gates such as `exit_code: 0`. Routing and authorization requirements live
 in the `rule_based` judge because they are assertions over transcript tool calls and final output. A failed `expect`
 short-circuits judging. Judge failure rules take precedence; otherwise every success assertion must pass.
+
+The five cases are single-prompt evaluations and use whole-transcript `tool_called` assertions. A real v0.12.0 run
+recorded tool calls in the transcript while its per-turn judge input contained zero turn results, which made every
+`tool_called_in_turn` and `tool_not_called_in_turn` assertion fail with `turn 1 does not exist`. Per-turn assertions are
+therefore reserved for explicit `input.turns` evaluations; forbidden single-prompt calls are expressed as failure rules.
 
 Tool names use exact equality. Tool arguments, when asserted, use skill-up's partial top-level argument matching. The
 suite does not infer that a similarly named or unrecorded operation occurred.

@@ -19,6 +19,8 @@ that skill-up can use. The suite/operator preflight requires skill-up v0.12.0; `
 pins the vendored Skill contents and source revision, not the skill-up CLI:
 
 ```bash
+export PATH="$(pwd -P)/.venv/bin:$PATH"
+test "$(python3 -c 'import sys; print(sys.version_info >= (3, 11))')" = True
 test "$(skill-up --version)" = "skill-up version 0.12.0"
 evaluation/skill-up/sync-skill.sh --check
 export POWERCONTEXT_SKILL_UP_ROOT="$(mktemp -d)"
@@ -52,6 +54,8 @@ that variable. Validate the configuration and run the positional evaluation path
 is global skill-up user configuration; it is not the evaluation path.
 
 ```bash
+export PATH="$(pwd -P)/.venv/bin:$PATH"
+test "$(python3 -c 'import sys; print(sys.version_info >= (3, 11))')" = True
 export POWERCONTEXT_SKILL_UP_TOKEN=skill-up-fixture-token
 export CLAUDE_PLUGIN_ROOT="$(pwd -P)/evaluation/skill-up/vendor/powercontext-plugin"
 curl --fail --silent --show-error http://127.0.0.1:8000/health/ready
@@ -72,6 +76,11 @@ that omits a failed case.
 After a real run, inventory the recorded names before accepting or changing assertions. The
 assertions use exact string equality in skill-up v0.12.0, so a similarly named operation or
 an assumed namespace does not count.
+
+These single-prompt cases intentionally use whole-transcript `tool_called` checks. In skill-up
+v0.12.0, a Claude Code `input.prompt` run can record tools in its transcript while exposing no
+per-turn judge results; `tool_called_in_turn` and `tool_not_called_in_turn` then fail with
+`turn 1 does not exist`. Forbidden tools are therefore declared as `failure: tool_called` rules.
 
 ```bash
 rg -o '"name":"[^"]+"' /tmp/powercontext-skill-up-first-run -g '*.json' -g '*.jsonl' \
