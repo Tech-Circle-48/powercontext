@@ -160,3 +160,31 @@ def test_vendored_skill_is_locked_and_reproducible() -> None:
         check=False,
     )
     assert completed.returncode == 0, completed.stderr
+
+
+def test_documentation_exposes_exact_commands_and_limits_claims() -> None:
+    readme = (PROJECT / "README.md").read_text(encoding="utf-8")
+    required = (
+        "skill-up version 0.12.0",
+        "skill-up validate evaluation/skill-up/evals/eval.yaml",
+        "skill-up run evaluation/skill-up/evals/eval.yaml --baseline",
+        "curl --fail --silent --show-error http://127.0.0.1:8000/health/ready",
+        "POWERCONTEXT_CLAUDE_AUTHORIZATION",
+        "CLAUDE_PLUGIN_ROOT",
+        "disableAllHooks",
+        "bypassPermissions",
+        "bounded recall",
+        "automatic Capture/Flush",
+        "Memory quality",
+        "Claude Code + MCP",
+    )
+    for text in required:
+        assert text in readme
+
+    for path in (
+        ROOT / "evaluation/README.md",
+        ROOT / "docs/en/development/integration-guidance-evaluation.md",
+        ROOT / "docs/zh/development/integration-guidance-evaluation.md",
+    ):
+        content = path.read_text(encoding="utf-8")
+        assert "evaluation/skill-up" in content or "../../../evaluation/skill-up" in content
