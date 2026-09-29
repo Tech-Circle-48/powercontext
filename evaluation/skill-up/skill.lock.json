@@ -1,0 +1,27 @@
+{
+  "files": {
+    "scripts/workspace_scope.py": {
+      "sha256": "0752bc6722d57574aa1e65bff5053cae8baed03ee2573bdabcc4141d6c60a964",
+      "source": "integrations/claude-code/plugins/powercontext/scripts/workspace_scope.py"
+    },
+    "skills/powercontext-project-context/SKILL.md": {
+      "sha256": "fd6aec8d2ee4e4aa522f8ecf75138b640c3d197c02401c5d3185089d7b345ac3",
+      "source": "integrations/claude-code/plugins/powercontext/skills/powercontext-project-context/SKILL.md"
+    },
+    "skills/powercontext-project-context/references/review-publication.md": {
+      "sha256": "83f3fa674d83785d06945669cbbe08b6d679665fed7e165d778dbfbcd9d10841",
+      "source": "integrations/claude-code/plugins/powercontext/skills/powercontext-project-context/references/review-publication.md"
+    },
+    "skills/powercontext-project-context/references/scope-memory.md": {
+      "sha256": "6858a67a67fe83164234c2cdce42e094def4e1821034816739be31635c8a2943",
+      "source": "integrations/claude-code/plugins/powercontext/skills/powercontext-project-context/references/scope-memory.md"
+    },
+    "skills/powercontext-project-context/references/work-handoff.md": {
+      "sha256": "76dea45b708f2155e395029afe57b31ac112d8b13d614a6ab604aa436e3d2b2e",
+      "source": "integrations/claude-code/plugins/powercontext/skills/powercontext-project-context/references/work-handoff.md"
+    }
+  },
+  "schema": "powercontext.skill-up-skill-lock.v1",
+  "source_revision": "ee5c076e444ad53f7be35dcbcb25249a8c6d0209",
+  "source_root": "integrations/claude-code/plugins/powercontext"
+}

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -136,3 +138,25 @@ def test_mcp_fixtures_keep_auth_and_failure_at_the_supported_boundary() -> None:
     failed = load_yaml(PROJECT / "evals/fixtures/mcp/failed-write.yaml")
     assert set(failed["tool_responses"]) == {"remember_memory"}
     assert failed["tool_responses"]["remember_memory"]["default"]["status"] == "failed"
+
+
+def test_vendored_skill_is_locked_and_reproducible() -> None:
+    lock = json.loads((PROJECT / "skill.lock.json").read_text(encoding="utf-8"))
+    assert lock["schema"] == "powercontext.skill-up-skill-lock.v1"
+    assert len(lock["source_revision"]) == 40
+    assert set(lock["files"]) == {
+        "scripts/workspace_scope.py",
+        "skills/powercontext-project-context/SKILL.md",
+        "skills/powercontext-project-context/references/review-publication.md",
+        "skills/powercontext-project-context/references/scope-memory.md",
+        "skills/powercontext-project-context/references/work-handoff.md",
+    }
+    assert all(len(item["sha256"]) == 64 for item in lock["files"].values())
+    completed = subprocess.run(
+        [str(PROJECT / "sync-skill.sh"), "--check"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
