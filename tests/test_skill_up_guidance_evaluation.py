@@ -53,9 +53,17 @@ def test_eval_uses_real_mcp_serial_benchmark_and_machine_reports() -> None:
     assert config["judge"] == {"type": "rule_based"}
     assert config["benchmark"] == {"enabled": True}
     assert config["report"] == {"formats": ["json", "junit", "html"], "artifacts": ["transcript"]}
+    assert config["skills"] == [
+        {
+            "source": "local_path",
+            "path": "vendor/powercontext-plugin/skills/powercontext-project-context",
+            "include": ["SKILL.md", "references/**"],
+        }
+    ]
 
     cases = config["cases"]
     assert isinstance(cases, dict)
+    assert cases["defaults"] == {"timeout_seconds": 300, "max_turns": 8}
     assert cases["parallelism"] == 1
     assert cases["files"] == [f"evals/cases/{name}" for name in CASE_NAMES]
 
@@ -77,28 +85,40 @@ def test_cases_cover_positive_negative_and_authorization_controls() -> None:
     ordinary = cases["01-ordinary-coding.yaml"]
     forbidden = tool_names(ordinary, "tool_not_called_in_turn")
     assert forbidden == {PREFIX + name for name in _MCP_OPERATION_IDS}
+    assert all(rule["tool_not_called_in_turn"]["turn"] == 1 for rule in success_rules(ordinary))
 
     explicit_save = cases["02-explicit-memory-save.yaml"]
-    assert PREFIX + "remember_memory" in tool_names(explicit_save, "tool_called_in_turn")
+    assert success_rules(explicit_save) == [{"tool_called_in_turn": {"turn": 1, "name": PREFIX + "remember_memory"}}]
 
     empty_search = cases["03-empty-memory-search.yaml"]
-    assert PREFIX + "search_memory" in tool_names(empty_search, "tool_called_in_turn")
-    assert {
-        PREFIX + "remember_memory",
-        PREFIX + "list_memory_entries",
-    } <= tool_names(empty_search, "tool_not_called_in_turn")
+    assert success_rules(empty_search) == [
+        {"tool_called_in_turn": {"turn": 1, "name": PREFIX + "search_memory"}},
+        {"tool_not_called_in_turn": {"turn": 1, "name": PREFIX + "remember_memory"}},
+        {"tool_not_called_in_turn": {"turn": 1, "name": PREFIX + "list_memory_entries"}},
+        {"output_matches": {"not": ["(?i)(restored|recalled|persisted|saved) (the |this )?(context|memory)"]}},
+    ]
 
     inspect = cases["04-inspect-candidates.yaml"]
-    assert PREFIX + "list_artifact_candidates" in tool_names(inspect, "tool_called_in_turn")
-    assert {
-        PREFIX + "approve_artifact_candidate",
-        PREFIX + "reject_artifact_candidate",
-        PREFIX + "revise_artifact_candidate",
-        PREFIX + "publish_artifact",
-    } <= tool_names(inspect, "tool_not_called_in_turn")
+    assert success_rules(inspect) == [
+        {"tool_called_in_turn": {"turn": 1, "name": PREFIX + "list_artifact_candidates"}},
+        {"tool_not_called_in_turn": {"turn": 1, "name": PREFIX + "approve_artifact_candidate"}},
+        {"tool_not_called_in_turn": {"turn": 1, "name": PREFIX + "reject_artifact_candidate"}},
+        {"tool_not_called_in_turn": {"turn": 1, "name": PREFIX + "revise_artifact_candidate"}},
+        {"tool_not_called_in_turn": {"turn": 1, "name": PREFIX + "publish_artifact"}},
+    ]
 
     failed = cases["05-failed-memory-save.yaml"]
-    assert PREFIX + "remember_memory" in tool_names(failed, "tool_called_in_turn")
+    assert success_rules(failed) == [
+        {"tool_called_in_turn": {"turn": 1, "name": PREFIX + "remember_memory"}},
+        {
+            "output_matches": {
+                "not": [
+                    "(?i)(successfully|successfully been) (saved|persisted|remembered)",
+                    "(?i)(saved|persisted|remembered) successfully",
+                ]
+            }
+        },
+    ]
     assert failed["mcp"] == {
         "servers": [
             {
@@ -108,7 +128,6 @@ def test_cases_cover_positive_negative_and_authorization_controls() -> None:
             }
         ]
     }
-    assert any("output_matches" in rule for rule in success_rules(failed))
 
 
 def test_mcp_fixtures_keep_auth_and_failure_at_the_supported_boundary() -> None:
