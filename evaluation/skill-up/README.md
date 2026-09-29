@@ -23,8 +23,9 @@ test "$(skill-up --version)" = "skill-up version 0.12.0"
 evaluation/skill-up/sync-skill.sh --check
 export POWERCONTEXT_SKILL_UP_ROOT="$(mktemp -d)"
 export POWERCONTEXT_SERVER_DATABASE_URL="sqlite+aiosqlite:///$POWERCONTEXT_SKILL_UP_ROOT/powercontext.db"
+export POWERCONTEXT_SKILL_UP_TOKEN=skill-up-fixture-token
 export POWERCONTEXT_SERVER_ACCESS_MODE=enforced
-export POWERCONTEXT_SERVER_AUTH_TOKEN=skill-up-fixture-token
+export POWERCONTEXT_SERVER_AUTH_TOKEN="$POWERCONTEXT_SKILL_UP_TOKEN"
 uv run powercontext server run --no-env-file
 ```
 
@@ -45,15 +46,16 @@ above so the `config_ref` path is exercised consistently. Never commit a real cr
 
 ## Validate and run
 
-In a separate evaluation terminal, export the vendored plugin root, wait for readiness, then
-export the complete header value matching the Server token. Validate the configuration and
-run the positional evaluation path. `--config` is global skill-up user configuration; it is
-not the evaluation path.
+In a separate evaluation terminal, repeat the same fixture-token assignment, export the
+vendored plugin root, wait for readiness, then derive the complete Authorization header from
+that variable. Validate the configuration and run the positional evaluation path. `--config`
+is global skill-up user configuration; it is not the evaluation path.
 
 ```bash
+export POWERCONTEXT_SKILL_UP_TOKEN=skill-up-fixture-token
 export CLAUDE_PLUGIN_ROOT="$(pwd -P)/evaluation/skill-up/vendor/powercontext-plugin"
 curl --fail --silent --show-error http://127.0.0.1:8000/health/ready
-export POWERCONTEXT_CLAUDE_AUTHORIZATION="Bearer <token>"
+export POWERCONTEXT_CLAUDE_AUTHORIZATION="Bearer $POWERCONTEXT_SKILL_UP_TOKEN"
 skill-up validate evaluation/skill-up/evals/eval.yaml
 skill-up run evaluation/skill-up/evals/eval.yaml --baseline \
   --output-dir /tmp/powercontext-skill-up-first-run
