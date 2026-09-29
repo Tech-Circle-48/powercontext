@@ -15,32 +15,29 @@ HTML, and transcript artifacts.
 ## Prerequisites and isolated Server
 
 Run all commands from the repository root with a Claude Code installation and credentials
-that skill-up can use. The lock requires this exact CLI version:
+that skill-up can use. The suite/operator preflight requires skill-up v0.12.0; `skill.lock.json`
+pins the vendored Skill contents and source revision, not the skill-up CLI:
 
 ```bash
-test "$(skill-up version)" = "skill-up version 0.12.0"
+test "$(skill-up --version)" = "skill-up version 0.12.0"
 evaluation/skill-up/sync-skill.sh --check
 export POWERCONTEXT_SKILL_UP_ROOT="$(mktemp -d)"
 export POWERCONTEXT_SERVER_DATABASE_URL="sqlite+aiosqlite:///$POWERCONTEXT_SKILL_UP_ROOT/powercontext.db"
-export CLAUDE_PLUGIN_ROOT="$(pwd -P)/evaluation/skill-up/vendor/powercontext-plugin"
+export POWERCONTEXT_SERVER_ACCESS_MODE=enforced
+export POWERCONTEXT_SERVER_AUTH_TOKEN=skill-up-fixture-token
 uv run powercontext server run --no-env-file
 ```
 
-Keep this Server running in a dedicated terminal. Make a new
+Run this block in the Server terminal and keep that Server running. The authentication
+variables are exported before Server startup, so its fixture bearer token is active when the
+MCP endpoint begins serving requests. Make a new
 `POWERCONTEXT_SKILL_UP_ROOT` and database for every real run; do not point the suite at a
 developer database or reuse a previous run's database. Serial case execution makes the
 fresh database's state and case ordering deterministic.
 
 The default real MCP endpoint is `http://127.0.0.1:8000/mcp`. Its Authorization header is
 read from `evals/fixtures/mcp/powercontext.yaml` through `config_ref`, not from
-`mcp.servers[]`; do not move the header into the server declaration. For an authenticated
-isolated Server, use a disposable fixture token in both terminals before starting it:
-
-```bash
-export POWERCONTEXT_SERVER_ACCESS_MODE=enforced
-export POWERCONTEXT_SERVER_AUTH_TOKEN=skill-up-fixture-token
-export POWERCONTEXT_CLAUDE_AUTHORIZATION="Bearer skill-up-fixture-token"
-```
+`mcp.servers[]`; do not move the header into the server declaration.
 
 An unauthenticated local Server may use an empty complete header only if skill-up and
 Claude Code accept it. Otherwise, start the isolated Server with the fixture bearer token
@@ -48,11 +45,13 @@ above so the `config_ref` path is exercised consistently. Never commit a real cr
 
 ## Validate and run
 
-In the evaluation terminal, wait for readiness, export the complete header value when
-authentication is enabled, validate the configuration, then run the positional evaluation
-path. `--config` is global skill-up user configuration; it is not the evaluation path.
+In a separate evaluation terminal, export the vendored plugin root, wait for readiness, then
+export the complete header value matching the Server token. Validate the configuration and
+run the positional evaluation path. `--config` is global skill-up user configuration; it is
+not the evaluation path.
 
 ```bash
+export CLAUDE_PLUGIN_ROOT="$(pwd -P)/evaluation/skill-up/vendor/powercontext-plugin"
 curl --fail --silent --show-error http://127.0.0.1:8000/health/ready
 export POWERCONTEXT_CLAUDE_AUTHORIZATION="Bearer <token>"
 skill-up validate evaluation/skill-up/evals/eval.yaml

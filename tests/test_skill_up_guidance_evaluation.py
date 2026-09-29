@@ -165,7 +165,7 @@ def test_vendored_skill_is_locked_and_reproducible() -> None:
 def test_documentation_exposes_exact_commands_and_limits_claims() -> None:
     readme = (PROJECT / "README.md").read_text(encoding="utf-8")
     required = (
-        "skill-up version 0.12.0",
+        'test "$(skill-up --version)" = "skill-up version 0.12.0"',
         "skill-up validate evaluation/skill-up/evals/eval.yaml",
         "skill-up run evaluation/skill-up/evals/eval.yaml --baseline",
         "curl --fail --silent --show-error http://127.0.0.1:8000/health/ready",
