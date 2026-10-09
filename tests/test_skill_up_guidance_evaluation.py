@@ -197,7 +197,7 @@ def test_vendored_skill_is_locked_and_reproducible() -> None:
     }
     assert all(len(item["sha256"]) == 64 for item in lock["files"].values())
     completed = subprocess.run(
-        [str(PROJECT / "sync-skill.sh"), "--check"],
+        [sys.executable, str(PROJECT / "sync_skill.py"), "--check"],
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -218,6 +218,7 @@ def test_documentation_exposes_exact_commands_and_limits_claims() -> None:
     readme = (PROJECT / "README.md").read_text(encoding="utf-8")
     required = (
         'test "$(skill-up --version)" = "skill-up version 0.12.0"',
+        "uv run python evaluation/skill-up/sync_skill.py --check",
         'export PATH="$(pwd -P)/.venv/bin:$PATH"',
         "test \"$(python3 -c 'import sys; print(sys.version_info >= (3, 11))')\" = True",
         "skill-up validate evaluation/skill-up/evals/eval.yaml",

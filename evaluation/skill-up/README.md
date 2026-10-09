@@ -22,7 +22,7 @@ pins the vendored Skill contents and source revision, not the skill-up CLI:
 export PATH="$(pwd -P)/.venv/bin:$PATH"
 test "$(python3 -c 'import sys; print(sys.version_info >= (3, 11))')" = True
 test "$(skill-up --version)" = "skill-up version 0.12.0"
-evaluation/skill-up/sync-skill.sh --check
+uv run python evaluation/skill-up/sync_skill.py --check
 export POWERCONTEXT_SKILL_UP_ROOT="$(mktemp -d)"
 export POWERCONTEXT_SERVER_DATABASE_URL="sqlite+aiosqlite:///$POWERCONTEXT_SKILL_UP_ROOT/powercontext.db"
 export POWERCONTEXT_SKILL_UP_TOKEN=skill-up-fixture-token
