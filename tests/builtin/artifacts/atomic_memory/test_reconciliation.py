@@ -95,6 +95,7 @@ def test_unpublished_reconciliation_receives_bounded_identity_correction(correct
             key = workset.apply("candidate:1", related, result.output)
             assert workset.items[key].origins == ()
             assert workset.items[key].content.text == "The project selected OceanBase for persistence."
+            assert workset.items[key].content.description == "OceanBase selected for persistence"
         else:
             with pytest.raises(InvalidInferenceOutputError):
                 await generator.generate(request)
