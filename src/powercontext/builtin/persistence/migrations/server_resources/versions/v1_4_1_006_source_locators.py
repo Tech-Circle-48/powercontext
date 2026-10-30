@@ -19,10 +19,10 @@ from pathlib import Path
 
 from alembic import op
 
-revision = "v1_4_1_005"
-down_revision = "v1_4_1_004"
+revision = "v1_4_1_006"
+down_revision = "v1_4_1_005"
 
 
 def upgrade():
-    resource = Path(__file__).parents[1] / "schemas/sqlite-v1_4_1_005.json"
+    resource = Path(__file__).parents[1] / "schemas/sqlite-v1_4_1_006.json"
     op.get_bind().exec_driver_sql(json.loads(resource.read_text(encoding="utf-8"))["create"])

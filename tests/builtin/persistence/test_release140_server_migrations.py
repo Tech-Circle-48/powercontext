@@ -16,8 +16,10 @@
 
 import json
 import sqlite3
+import struct
 from contextlib import closing
 from datetime import UTC, datetime
+from hashlib import sha256
 
 import pytest
 import sqlite_vec
@@ -27,24 +29,26 @@ from sqlalchemy import create_engine
 
 from powercontext.artifacts import ArtifactRef
 from powercontext.builtin.artifacts.atomic_memory.models import (
-    AtomicMemory,
     AtomicMemoryContent,
-    AtomicMemoryRecord,
-    AtomicMemoryState,
 )
 from powercontext.builtin.artifacts.experience import ExperienceContent
 from powercontext.builtin.artifacts.memory import EmbeddingProfile
+from powercontext.builtin.artifacts.memory.canonical import canonical_json
+from powercontext.builtin.artifacts.search import analyze_text
 from powercontext.builtin.code import CodeConfig
 from powercontext.builtin.dream.models import CreateDreamRunRequest, DreamRecord, DreamRun
 from powercontext.builtin.inference.models import EmbeddingResult
-from powercontext.builtin.persistence.atomic_memory_index import AtomicMemoryProjectionPublisher
+from powercontext.builtin.persistence.atomic_memory_index import (
+    atomic_memory_embedding_input,
+    atomic_memory_embedding_input_hash,
+    atomic_memory_profile_fingerprint,
+)
 from powercontext.builtin.persistence.candidates import CandidateRepository
 from powercontext.builtin.persistence.dream import DreamRepository
 from powercontext.builtin.persistence.migrations.deployment import deployment_runner, server_bundle
 from powercontext.builtin.persistence.migrations.models import MigrationError
 from powercontext.builtin.persistence.migrations.pinned import finish, pinned
 from powercontext.builtin.persistence.sqlite import SQLiteConfig
-from powercontext.builtin.persistence.sqlite.atomic_memory_index import SQLiteAtomicMemoryIndex
 from powercontext.server.factory import create_server_app
 from powercontext.server.settings import McpConfig, ServerSettings
 
@@ -142,7 +146,7 @@ def test_registered_sources_choose_distinct_lineages(tmp_path, release, expected
     _settings, _embedding, runner = _source(tmp_path, release=release)
     plan = runner.plan()
     assert plan.source_revision == expected
-    assert plan.revisions == ("s1400", "s1401", "s1402", "v1_4_1_004", "v1_4_1_005")
+    assert plan.revisions == ("s1400", "s1401", "s1402", "v1_4_1_004", "v1_4_1_005", "v1_4_1_006")
 
 
 @pytest.mark.parametrize("release", ["1.3.0", "1.4.0"])
@@ -150,8 +154,6 @@ def test_registered_sources_choose_distinct_lineages(tmp_path, release, expected
 def test_populated_release_atomic_memory_survives_upgrade_before_locator_table_exists(tmp_path, release, vectors):
     settings, embedding, runner = _source(tmp_path, release=release, vectors=vectors)
     content = AtomicMemoryContent(kind="fact", text="Historical Atomic Memory remains readable.")
-    artifact = AtomicMemory(artifact_id="historical-memory", revision=1, content=content)
-    record = AtomicMemoryRecord(artifact=artifact, state=AtomicMemoryState())
 
     def connect():
         connection = sqlite3.connect(runner.database)
@@ -175,15 +177,28 @@ def test_populated_release_atomic_memory_survives_upgrade_before_locator_table_e
                 "INSERT INTO pc_artifact_heads (scope_id,family,artifact_id,revision) "
                 "VALUES ('scope','atomic-memory','historical-memory',1)"
             )
-            index = SQLiteAtomicMemoryIndex(embedding)
-            publisher = AtomicMemoryProjectionPublisher(
-                index, embedding_model=ControlledEmbedding(embedding) if embedding is not None else None
+            # Seed the released layout directly: today's publisher also writes
+            # description, which is absent until the explicit 005 migration.
+            connection.exec_driver_sql(
+                "INSERT INTO pc_atomic_memory_current "
+                "(scope_id,artifact_id,revision,state_version,content_hash,projection_format,kind,text,"
+                "searchable_text,tag_keys,embedding,profile_fingerprint,embedding_input_hash) "
+                "VALUES ('scope','historical-memory',1,0,?,'powercontext.atomic-memory.current.v1',?,?,?,?,?,?,?)",
+                (
+                    sha256(canonical_json(content.model_dump(mode="json", by_alias=True))).hexdigest(),
+                    content.kind,
+                    content.text,
+                    analyze_text(atomic_memory_embedding_input(content.kind, content.text)),
+                    "[]",
+                    None if embedding is None else struct.pack("<3f", 1.0, 0.0, 0.0),
+                    None if embedding is None else atomic_memory_profile_fingerprint(embedding),
+                    None if embedding is None else atomic_memory_embedding_input_hash(content.kind, content.text),
+                ),
             )
-            finish(publisher.publish(pinned(connection), "scope", record, finish(publisher.prepare(content))))
     finally:
         engine.dispose()
 
-    assert _apply(runner).revision == "v1_4_1_005"
+    assert _apply(runner).revision == "v1_4_1_006"
     assert runner.verify().state == "ready"
     assert not _apply(runner).changed
     app = create_server_app(

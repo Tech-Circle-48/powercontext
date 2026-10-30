@@ -176,6 +176,7 @@ from powercontext.http import (
     ActivateHandoffRequest,
     ApproveCandidateRequest,
     ArtifactReference,
+    AtomicMemoryReadContent,
     BootstrapDeliveryReceipt,
     Candidate,
     CandidateAudit,
@@ -1139,6 +1140,7 @@ def reviewed_content(
     | SkillProposal
     | ProfileWriteContent
     | AtomicMemoryContent
+    | AtomicMemoryReadContent
     | TopicMemoryDreamProposal
     | TransportHandoffContent
     | PromptContent,
@@ -1157,7 +1159,7 @@ def reviewed_content(
         return runtime_handoff_content(value)
     if isinstance(value, TopicMemoryDreamProposal):
         return RuntimeTopicMemoryContent.model_validate(value.model_dump(mode="json"))
-    if isinstance(value, AtomicMemoryContent):
+    if isinstance(value, (AtomicMemoryContent, AtomicMemoryReadContent)):
         return RuntimeAtomicMemoryContent.model_validate(value.model_dump(mode="json"))
     if isinstance(value, ProfileWriteContent):
         return RuntimeProfileWriteContent.model_validate(value.model_dump(mode="json"))
@@ -1172,7 +1174,7 @@ def reviewed_proposal(
     ExperienceProposal
     | SkillProposal
     | ProfileCandidateProposal
-    | AtomicMemoryContent
+    | AtomicMemoryReadContent
     | TopicMemoryDreamProposal
     | TransportHandoffContent
     | PromptContent
@@ -1184,7 +1186,9 @@ def reviewed_proposal(
     if isinstance(value, RuntimeTopicMemoryContent):
         return TopicMemoryDreamProposal.model_validate(value.model_dump(mode="json"))
     if isinstance(value, RuntimeAtomicMemoryContent):
-        return AtomicMemoryContent.model_validate(value.model_dump(mode="json", by_alias=True, exclude={"creation"}))
+        return AtomicMemoryReadContent.model_validate(
+            value.model_dump(mode="json", by_alias=True, exclude={"creation"})
+        )
     if isinstance(value, RuntimeProfileCandidateProposal):
         return ProfileCandidateProposal.model_validate(value.model_dump(mode="json", by_alias=True))
     if isinstance(value, ExperienceContent):

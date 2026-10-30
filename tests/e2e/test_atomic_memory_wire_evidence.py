@@ -177,7 +177,12 @@ def test_adapter_text_position_survives_memory_generation_and_reopen(tmp_path) -
             return GenerationResult(
                 output=AtomicMemoryExtractionOutput(
                     candidates=(
-                        AtomicMemoryCandidate(kind="fact", text=BODY, evidence_ids=(request.evidence[0].evidence_id,)),
+                        AtomicMemoryCandidate(
+                            kind="fact",
+                            text=BODY,
+                            description="Preserve the wire note fact.",
+                            evidence_ids=(request.evidence[0].evidence_id,),
+                        ),
                     )
                 )
             )

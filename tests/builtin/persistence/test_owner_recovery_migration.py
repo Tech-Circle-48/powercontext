@@ -39,13 +39,19 @@ def test_registered_owner_recovery_upgrade_preserves_history_and_revision_checks
     shutil.copytree(current.directory, directory, ignore=shutil.ignore_patterns("__pycache__"))
     manifest_path = directory / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    locator_resources = manifest["revision_resources"].pop("v1_4_1_005")
-    for resource in (*locator_resources, "versions/v1_4_1_005_source_locators.py", "mysql/versions/v1_4_1_005.py"):
+    locator_resources = manifest["revision_resources"].pop("v1_4_1_006")
+    for resource in (*locator_resources, "versions/v1_4_1_006_source_locators.py", "mysql/versions/v1_4_1_006.py"):
+        (directory / resource).unlink()
+    del manifest["sqlite_fingerprints"]["v1_4_1_006"]
+    del manifest["domain_readiness"]["v1_4_1_006"]
+    manifest["mysql_state_layouts"].remove("schemas/mysql-v1_4_1_006.json")
+    manifest["affected_objects"].remove("pc_artifact_source_locators")
+    description = manifest["revision_resources"].pop("v1_4_1_005")
+    for resource in (*description, "versions/v1_4_1_005_atomic_memory_description.py", "mysql/versions/v1_4_1_005.py"):
         (directory / resource).unlink()
     del manifest["sqlite_fingerprints"]["v1_4_1_005"]
     del manifest["domain_readiness"]["v1_4_1_005"]
     manifest["mysql_state_layouts"].remove("schemas/mysql-v1_4_1_005.json")
-    manifest["affected_objects"].remove("pc_artifact_source_locators")
     resources = manifest["revision_resources"].pop("v1_4_1_004")
     for resource in (*resources, "versions/v1_4_1_004_owner_recovery.py", "mysql/versions/v1_4_1_004.py"):
         (directory / resource).unlink()
@@ -66,8 +72,8 @@ def test_registered_owner_recovery_upgrade_preserves_history_and_revision_checks
     original_evidence = json.loads(old.evidence_path.read_text(encoding="utf-8"))
     upgraded = SQLiteMigrationRunner(database, current, configuration=configuration(embedding))
     plan = upgraded.plan()
-    assert plan.source_revision == "s1402" and plan.revisions == ("v1_4_1_004", "v1_4_1_005")
-    assert apply(upgraded).revision == "v1_4_1_005"
+    assert plan.source_revision == "s1402" and plan.revisions == ("v1_4_1_004", "v1_4_1_005", "v1_4_1_006")
+    assert apply(upgraded).revision == "v1_4_1_006"
     assert upgraded.verify().state == "ready"
     assert not apply(upgraded).changed
     evidence = json.loads(upgraded.evidence_path.read_text(encoding="utf-8"))
@@ -97,7 +103,7 @@ def test_owner_recovery_mysql_registration_matches_native_character_and_key_defi
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci"""
     bundle = server_bundle()
     inventory = {"tables": {}, "views": [], "triggers": []}
-    for revision in bundle.revisions[:-1]:
+    for revision in bundle.revisions[: bundle.revisions.index("v1_4_1_004")]:
         path = bundle.directory / f"schemas/mysql-{revision}.json"
         fragment = json.loads(path.read_text(encoding="utf-8"))
         for change in fragment["revisions"][revision]["changes"]:
