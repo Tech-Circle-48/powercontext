@@ -610,6 +610,7 @@ def test_bundle_round_trips_authoritative_scope_data_and_excludes_projections(tm
             async with target.database.transaction() as connection:
                 assert await connection.scalar(select(ARTIFACT_HEADS_TABLE.c.searchable_text)) is None
                 locator = await connection.scalar(select(ARTIFACT_SOURCE_LOCATORS_TABLE.c.locator))
+                assert isinstance(locator, bytes)
                 assert json.loads(locator) == {"kind": "line_range", "start_line": 1, "end_line": 1}
 
     asyncio.run(scenario())

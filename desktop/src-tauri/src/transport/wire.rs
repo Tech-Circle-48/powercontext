@@ -1515,7 +1515,7 @@ pub enum SourceLineRangeLocatorKind {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
-#[serde(tag = "kind")]
+#[serde(untagged)]
 pub enum SourceLocator {
     #[serde(rename = "sequence")]
     Sequence(SourceSequenceLocator),

@@ -71,6 +71,8 @@ edited file. Opaque sources and ordinary caller-supplied references may omit the
 preserve explicitly supplied locators; they do not infer line numbers or heading paths. No read-time text scan or
 historical backfill is performed. Existing worker manifests retain their exact fingerprints; a worker adopting
 the expanded text-evidence schema must increment its Source Definition version before registering it.
+Built-in Content and OpenDAL version-1 definitions keep the frozen `TextEvidenceV1` shape; their journal locators
+are attached during extraction rather than changing the registered projection schema.
 
 Locators survive candidate payloads, Artifact lineage, Handoff citations, HTTP/MCP reads and portable bundle
 export/restore. Distinct positions in the same Source remain distinct citations. A missing locator stays omitted

@@ -26,27 +26,13 @@ from referencing.exceptions import Unresolvable
 
 from powercontext.errors import InvalidSourceDefinitionError, InvalidSourceObservationError
 from powercontext.limits import MAX_SOURCE_OBSERVATION_BYTES
-from powercontext.sources import TEXT_EVIDENCE_PROJECTION_KEY, SourceDefinitionManifest, SourceObservation, TextEvidence
-
-# Registered v1 manifests are immutable and content-addressed. Keep the original
-# schema accepted without rewriting its declaration or fingerprint on upgrade.
-_TEXT_EVIDENCE_V1_WITHOUT_LOCATOR = {
-    "$defs": {"JsonValue": {}},
-    "description": "Canonical JSON shape consumed as textual Artifact evidence.",
-    "properties": {
-        "source_type": {"title": "Source Type", "type": "string"},
-        "source_id": {"title": "Source Id", "type": "string"},
-        "content": {"title": "Content", "type": "string"},
-        "metadata": {
-            "additionalProperties": {"$ref": "#/$defs/JsonValue"},
-            "title": "Metadata",
-            "type": "object",
-        },
-    },
-    "required": ["source_type", "source_id", "content"],
-    "title": "TextEvidence",
-    "type": "object",
-}
+from powercontext.sources import (
+    TEXT_EVIDENCE_PROJECTION_KEY,
+    SourceDefinitionManifest,
+    SourceObservation,
+    TextEvidence,
+    TextEvidenceV1,
+)
 
 
 def validate_source_definition_manifest(manifest: SourceDefinitionManifest, /) -> None:
@@ -60,7 +46,7 @@ def validate_source_definition_manifest(manifest: SourceDefinitionManifest, /) -
         json_schema_validator(projection.key.name, projection.schema_)
         if projection.key == TEXT_EVIDENCE_PROJECTION_KEY and projection.schema_ not in (
             standard_text_schema,
-            _TEXT_EVIDENCE_V1_WITHOUT_LOCATOR,
+            TextEvidenceV1.model_json_schema(),
         ):
             raise InvalidSourceDefinitionError(
                 type(manifest), "projection", f"{projection.key.name!r} must use the standard schema"

@@ -66,6 +66,8 @@ Atomic Memory 提取会为内置 Content Source 及没有更细位置的 Source�
 不透明来源和调用方提供的普通引用可以省略 locator。其他生成接口保留显式传入的 locator，不推测行号或标题路径。
 读取时不会扫描文本定位，也不会给历史引用回填推测的位置。已有 worker manifest 保留原指纹；
 worker 采用扩展后的文本证据 schema 时，须先提高 Source Definition 版本再注册。
+内置 Content 与 OpenDAL 的 version-1 定义继续使用冻结的 `TextEvidenceV1` 结构；其 journal locator 在提取时附加，
+不会改变已注册投影的 schema。
 
 locator 会经过 Candidate 负载、Artifact 血缘、Handoff 引用、HTTP/MCP 读取以及便携备份导出恢复而保留。
 同一 Source 的不同位置是不同的引用。缺失的 locator 在序列化时仍被省略，已有记录及其规范编码保持兼容。

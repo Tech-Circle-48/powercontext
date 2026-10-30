@@ -77,13 +77,11 @@ def test_source_locator_round_trips_both_transport_spellings() -> None:
         "source_id": "doc",
         "locator": {"kind": "line_range", "start_line": 1, "end_line": 200},
     })
-    for encode, decode in (
-        (source_reference, runtime_source_reference),
-        (source_type_reference, runtime_source_type_reference),
-    ):
-        assert decode(encode(reference)) == reference
-        bare = SourceRef(source_type="content", source_id="old")
-        assert "locator" not in encode(bare).model_dump(mode="json")
+    assert runtime_source_reference(source_reference(reference)) == reference
+    assert runtime_source_type_reference(source_type_reference(reference)) == reference
+    bare = SourceRef(source_type="content", source_id="old")
+    assert "locator" not in source_reference(bare).model_dump(mode="json")
+    assert "locator" not in source_type_reference(bare).model_dump(mode="json")
 
 
 def test_transport_rejects_excessive_source_line_span() -> None:

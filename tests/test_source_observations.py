@@ -124,12 +124,12 @@ def test_pre_locator_text_evidence_manifest_retains_its_fingerprint() -> None:
     manifest = SourceDefinitionManifest.model_validate(payload)
     validate_source_definition_manifest(manifest)
     assert manifest.model_dump(mode="json", by_alias=True) == payload
+    assert manifest_for_definition(CONTENT_SOURCE_DEFINITION) == manifest
 
     async def scenario() -> None:
         registry = SourceDefinitionRegistry((CONTENT_SOURCE_DEFINITION,))
         source = await registry.resolve(ContentCapture(source_id="legacy", content="原始证据"))
         observation = project_source_for_transport(registry, source)
-        historical = observation.model_copy(update={"definition_fingerprint": manifest.fingerprint})
-        validate_source_observation(historical, manifest)
+        validate_source_observation(observation, manifest)
 
     asyncio.run(scenario())
