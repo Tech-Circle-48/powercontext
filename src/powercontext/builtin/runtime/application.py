@@ -743,7 +743,6 @@ class ScopedRecordApplication:
         async with (
             self._runtime._scoped_operation(
                 self.scope_id,
-                generation_purpose=ModelUsagePurpose.MEMORY_EXTRACTION if family == "atomic-memory" else None,
                 embedding_purpose=ModelUsagePurpose.MEMORY_INDEXING if family == "atomic-memory" else None,
             ),
             self._runtime._locked(self.scope_id),
@@ -856,7 +855,6 @@ class ScopedRecordApplication:
         async with (
             self._runtime._scoped_operation(
                 self.scope_id,
-                generation_purpose=ModelUsagePurpose.MEMORY_EXTRACTION if family == "atomic-memory" else None,
                 embedding_purpose=ModelUsagePurpose.MEMORY_INDEXING if family == "atomic-memory" else None,
             ),
             self._runtime._locked(self.scope_id),
@@ -3443,7 +3441,6 @@ class ScopedAtomicMemoryApplication:
         async with self._runtime._scoped_operation(
             self.scope_id,
             embedding_purpose=ModelUsagePurpose.MEMORY_INDEXING,
-            generation_purpose=ModelUsagePurpose.MEMORY_EXTRACTION,
         ):
             created = await self._runtime._records().create_atomic_memories(
                 self.scope_id, values, execution_context=context
@@ -3465,7 +3462,6 @@ class ScopedAtomicMemoryApplication:
         async with self._runtime._scoped_operation(
             self.scope_id,
             embedding_purpose=ModelUsagePurpose.MEMORY_INDEXING,
-            generation_purpose=ModelUsagePurpose.MEMORY_EXTRACTION,
         ):
             return await self._scoped.merge(inputs, content, **kwargs)
 
@@ -3481,7 +3477,6 @@ class ScopedAtomicMemoryApplication:
         async with self._runtime._scoped_operation(
             self.scope_id,
             embedding_purpose=ModelUsagePurpose.MEMORY_INDEXING,
-            generation_purpose=ModelUsagePurpose.MEMORY_EXTRACTION,
         ):
             return await self._scoped.restore(artifact_id, **kwargs)
 
